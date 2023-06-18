@@ -5,6 +5,9 @@ from django.core.validators import RegexValidator
 
 
 class Client(models.Model):
+    """
+    Client for mailing
+    """
     phone_number_validator = RegexValidator(
         regex=r"^7\d{10}$",
         message="Номер телефона клиента в формате 7XXXXXXXXXX (X-цифра от 0 до 9)",)
@@ -29,6 +32,9 @@ class Client(models.Model):
 
 
 class Message(models.Model):
+    """
+    Messages of mailing
+    """
     text = models.CharField(_('Tag'), max_length=500, validators=[MinLengthValidator(1)])
     created_at = models.DateTimeField(_("Created at"), auto_now_add=True)
     mailing = models.ForeignKey('Mailing', on_delete=models.CASCADE, related_name="messages")
@@ -42,6 +48,9 @@ class Message(models.Model):
 
 
 class Mailing(models.Model):
+    """
+    Mailing
+    """
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     filter_mobile_operator_code = models.CharField(

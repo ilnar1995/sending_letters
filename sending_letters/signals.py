@@ -1,8 +1,4 @@
-import asyncio
-import time
-
 from django.dispatch import receiver
-
 from django.dispatch import Signal
 from . import models
 from django.utils import timezone
@@ -14,9 +10,9 @@ user_signal = Signal()
 @receiver(user_signal,
           dispatch_uid="signal_for_sending_messages")
 def signal_for_sending_messages(sender, instance, **kwargs):
-    '''
+    """
     Signal for sending messages
-    '''
+    """
     print('**********сработал сигнал для рассылки**************')
     mailing_instance = kwargs.get('mailing_inst')
     mailing_instance_dict = kwargs.get('mailing_inst').__dict__
