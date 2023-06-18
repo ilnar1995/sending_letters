@@ -1,15 +1,13 @@
 import random
 
 from django_project.celery import app
-from celery import shared_task
-# from .models import Car, Location
-#
-# @shared_task
-# def sample_task():
-#     print('Запущено обновление локации машин')
-#     pks = Location.objects.values_list('pk', flat=True)
-#     cars = Car.objects.all()
-#     for car in cars:
-#         car.location = Location.objects.order_by("?").first()
-#         car.save(update_fields=["location"])
-#     return "Обновлены локации машин"
+from .models import Client, Mailing, Message
+
+@app.task(bind=True, retry_backoff=True)
+def send_messages(self, mailing_instance_dict, message_text, client_id):
+    mailing_inst = Mailing.objects.get(id=mailing_instance_dict.get("id"))
+    Message.objects.create(mailing=mailing_inst, text=message_text)
+
+    print(
+        f'сообщение: "{message_text}", отправлено клиенту с id:{client_id} в рассылке с id:{mailing_instance_dict.get("id")}'
+    )

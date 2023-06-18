@@ -5,44 +5,40 @@ from django.dispatch import receiver
 
 from django.dispatch import Signal
 from . import models
-from django.db.models import Q
+from django.utils import timezone
+from .tasks import send_messages
 
 user_signal = Signal()
 
 
-
 @receiver(user_signal,
-          dispatch_uid="status_task_send")  # Функция update_job_status_listeners будет вызвана только при сохранении экземпляра BordomaticPrivate
-def status_task_send(sender, instance, **kwargs):
+          dispatch_uid="signal_for_sending_messages")
+def signal_for_sending_messages(sender, instance, **kwargs):
     '''
-    Sends task status to the browser when a video was created
+    Signal for sending messages
     '''
-    campaign_instance = kwargs.get('inst')
-    print(kwargs)
-    # loop = asyncio.get_event_loop()
-    # print(loop)
-    print('**********сработал сигнал сохранения рассылки**************')
-    clients = models.Client.objects.filter(
-        Q(operator_code=campaign_instance.filter_mobile_operator_code) & Q(tag=campaign_instance.filter_tag)
-    )
+    print('**********сработал сигнал для рассылки**************')
+    mailing_instance = kwargs.get('mailing_inst')
+    mailing_instance_dict = kwargs.get('mailing_inst').__dict__
+    del mailing_instance_dict['_state']
+    message_text = kwargs.get('text_message')
+
+    clients = models.Client.objects.all()
+    if mailing_instance_dict.get('filter_mobile_operator_code'):
+        clients = clients.filter(operator_code=mailing_instance_dict.get('filter_mobile_operator_code'))
+    if mailing_instance_dict.get('filter_tag'):
+        clients = clients.filter(tag=mailing_instance_dict.get('filter_tag'))
 
     for client in clients:
-        models.Message.objects.create(
-            campaign=campaign_instance, text=kwargs.get('text_message')
-        )
-
-
-
-
-# from django.db.models.signals import post_save
-# from django.dispatch import receiver
-# from django.db.models import Q
-#
-# from .models import Campaign
-# from .tasks import *
-#
-#
-#
-# @receiver(post_save, sender=Campaign)
-# def sending_letters(sender, instance, **kwargs):
-#     print('**********сработал сигнал сохранения рассылки**************')
+        if timezone.now() <= mailing_instance.end_time:
+            if mailing_instance.start_time <= timezone.now():
+                send_messages.apply_async(
+                    (mailing_instance_dict, message_text, client.id),
+                    eta=mailing_instance.start_time,
+                    expires=mailing_instance.end_time,
+                )
+            else:
+                send_messages.apply_async(
+                    (mailing_instance_dict, message_text, client.id),
+                    expires=mailing_instance.end_time,
+                )

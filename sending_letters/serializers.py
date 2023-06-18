@@ -4,20 +4,22 @@ from . import signals
 
 
 class MessageSerializer(serializers.ModelSerializer):
-    campaign = serializers.CharField(
-        source='campaign.id', read_only=True, allow_null=True)
+    mailing_id = serializers.IntegerField(
+        source='mailing.id', read_only=True, allow_null=True)
+    created_at = serializers.DateTimeField(read_only=True, allow_null=True)
 
     class Meta:
         model = models.Message
-        fields = "__all__"
+        fields = ('id', 'mailing_id', 'created_at', 'text',)
 
 
-class CampaignSerializer(serializers.ModelSerializer):
+class MailingSerializer(serializers.ModelSerializer):
     messages = MessageSerializer(many=True, read_only=True)
-    text_message = serializers.CharField(write_only=True)
-
+    text_message = serializers.CharField(max_length=500, write_only=True)
+    filter_mobile_operator_code = serializers.CharField(max_length=3, required=True)
+    filter_tag = serializers.CharField(max_length=50, required=False)
     class Meta:
-        model = models.Campaign
+        model = models.Mailing
         fields = "__all__"
 
     def create(self, validated_data):
@@ -25,9 +27,9 @@ class CampaignSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
     def save(self, **kwargs):
-        print(self.context.get("request").data.get("text_message"))
         instance = super().save(**kwargs)
-        signals.user_signal.send(sender=None, instance=None, text_message=self.context.get("request").data.get("text_message"), inst=instance)
+        signals.user_signal.send(sender=None, instance=None,
+                                 text_message=self.context.get("request").data.get("text_message"), mailing_inst=instance)
         return instance
 
 

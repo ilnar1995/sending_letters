@@ -31,7 +31,7 @@ class Client(models.Model):
 class Message(models.Model):
     text = models.CharField(_('Tag'), max_length=500, validators=[MinLengthValidator(1)])
     created_at = models.DateTimeField(_("Created at"), auto_now_add=True)
-    campaign = models.ForeignKey('Campaign', on_delete=models.CASCADE, related_name="messages")
+    mailing = models.ForeignKey('Mailing', on_delete=models.CASCADE, related_name="messages")
 
     def __str__(self):
         return self.text
@@ -41,14 +41,14 @@ class Message(models.Model):
         ordering = ["id"]
 
 
-class Campaign(models.Model):
+class Mailing(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     filter_mobile_operator_code = models.CharField(
         verbose_name="Search by mobile operator code", max_length=3, blank=True,
         validators=[MinLengthValidator(1)]
     )
-    filter_tag = models.CharField(_("Tag"), max_length=50)
+    filter_tag = models.CharField(_("Tag"), max_length=50, blank=True)
 
     def __str__(self):
         return f"Campaign {self.id} with start time {self.start_time}"
