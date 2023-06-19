@@ -15,10 +15,6 @@ class CampaignViewSet(mixins.CreateModelMixin,
     http_method_names = ["get", "delete", "post", ]
     serializer_class = MailingSerializer
 
-    def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        return response
-
 
 class MessageViewSet(ModelViewSet):
     queryset = Message.objects.all()
